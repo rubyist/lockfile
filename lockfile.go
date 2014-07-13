@@ -1,7 +1,9 @@
 package lockfile
 
 type Locker interface {
-	Lock() error
+	LockRead() error
+	LockWrite() error
 	Unlock()
 	Owner() int
+	Remove()
 }
