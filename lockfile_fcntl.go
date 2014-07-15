@@ -13,15 +13,16 @@ type FcntlLockfile struct {
 	Path         string
 	file         *os.File
 	lockObtained bool
+	maintainFile bool
 	ft           *syscall.Flock_t
 }
 
 func NewFcntlLockfile(path string) *FcntlLockfile {
-	return &FcntlLockfile{Path: path}
+	return &FcntlLockfile{Path: path, maintainFile: true}
 }
 
 func NewFcntlLockfileFromFile(file *os.File) *FcntlLockfile {
-	return &FcntlLockfile{file: file}
+	return &FcntlLockfile{file: file, maintainFile: false}
 }
 
 func (l *FcntlLockfile) LockRead() error {
@@ -47,7 +48,9 @@ func (l *FcntlLockfile) Unlock() {
 
 	l.ft.Type = syscall.F_UNLCK
 	syscall.FcntlFlock(l.file.Fd(), syscall.F_SETLK, l.ft)
-	l.file.Close()
+	if l.maintainFile {
+		l.file.Close()
+	}
 }
 
 func (l *FcntlLockfile) Owner() int {
@@ -99,7 +102,9 @@ func (l *FcntlLockfile) lock(exclusive, blocking bool) error {
 
 	err := syscall.FcntlFlock(l.file.Fd(), flags, l.ft)
 	if err != nil {
-		l.file.Close()
+		if l.maintainFile {
+			l.file.Close()
+		}
 		return ErrFailedToLock
 	}
 

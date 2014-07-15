@@ -13,14 +13,15 @@ type FLockfile struct {
 	Path         string
 	file         *os.File
 	lockObtained bool
+	maintainFile bool
 }
 
 func NewFLockfile(path string) *FLockfile {
-	return &FLockfile{Path: path}
+	return &FLockfile{Path: path, maintainFile: true}
 }
 
 func NewFLockfileFromFile(file *os.File) *FLockfile {
-	return &FLockfile{file: file}
+	return &FLockfile{file: file, maintainFile: false}
 }
 
 func (l *FLockfile) LockRead() error {
@@ -45,7 +46,9 @@ func (l *FLockfile) Unlock() {
 	}
 
 	syscall.Flock(int(l.file.Fd()), syscall.LOCK_UN)
-	l.file.Close()
+	if l.maintainFile {
+		l.file.Close()
+	}
 }
 
 func (l *FLockfile) Owner() int {
@@ -84,7 +87,9 @@ func (l *FLockfile) lock(exclusive, blocking bool) error {
 
 	err := syscall.Flock(int(l.file.Fd()), flags)
 	if err != nil {
-		l.file.Close()
+		if l.maintainFile {
+			l.file.Close()
+		}
 		return ErrFailedToLock
 	}
 
