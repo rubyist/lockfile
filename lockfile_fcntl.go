@@ -53,6 +53,9 @@ func (l *FcntlLockfile) Unlock() {
 	}
 }
 
+// Owner will return the pid of the process that owns an fcntl based
+// lock on the file. If the file is not locked it will return -1. If
+// a lock is owned by the current process, it will return -1.
 func (l *FcntlLockfile) Owner() int {
 	ft := &syscall.Flock_t{}
 	*ft = *l.ft
