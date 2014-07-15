@@ -6,7 +6,6 @@ package lockfile
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"syscall"
 )
 
@@ -17,13 +16,12 @@ type FcntlLockfile struct {
 	ft           *syscall.Flock_t
 }
 
-func NewFcntlLockfile(directory, name string) (*FcntlLockfile, error) {
-	fileName := fmt.Sprintf("%s.lock", name)
-	return &FcntlLockfile{Path: filepath.Join(directory, fileName)}, nil
+func NewFcntlLockfile(path string) *FcntlLockfile {
+	return &FcntlLockfile{Path: path}
 }
 
-func NewFcntlLockfileFromFile(file *os.File) (*FcntlLockfile, error) {
-	return &FcntlLockfile{file: file}, nil
+func NewFcntlLockfileFromFile(file *os.File) *FcntlLockfile {
+	return &FcntlLockfile{file: file}
 }
 
 func (l *FcntlLockfile) LockRead() error {

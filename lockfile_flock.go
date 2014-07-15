@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -16,13 +15,12 @@ type FLockfile struct {
 	lockObtained bool
 }
 
-func NewFLockfile(directory, name string) (*FLockfile, error) {
-	fileName := fmt.Sprintf("%s.lock", name)
-	return &FLockfile{Path: filepath.Join(directory, fileName)}, nil
+func NewFLockfile(path string) *FLockfile {
+	return &FLockfile{Path: path}
 }
 
-func NewFLockfileFromFile(file *os.File) (*FLockfile, error) {
-	return &FLockfile{file: file}, nil
+func NewFLockfileFromFile(file *os.File) *FLockfile {
+	return &FLockfile{file: file}
 }
 
 func (l *FLockfile) LockRead() error {
