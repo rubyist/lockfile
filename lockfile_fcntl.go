@@ -73,10 +73,6 @@ func (l *FcntlLockfile) Remove() {
 }
 
 func (l *FcntlLockfile) lock(exclusive, blocking bool) error {
-	if l.lockObtained {
-		return fmt.Errorf("Already locked")
-	}
-
 	if l.file == nil {
 		f, err := os.OpenFile(l.Path, os.O_CREATE|os.O_RDWR, 0666)
 		if err != nil {
@@ -109,7 +105,7 @@ func (l *FcntlLockfile) lock(exclusive, blocking bool) error {
 	if err != nil {
 		owner := l.Owner()
 		l.file.Close()
-		return fmt.Errorf("Could not obtain file lock, owned by %d", owner)
+		return ErrFailedToLock
 	}
 
 	l.lockObtained = true

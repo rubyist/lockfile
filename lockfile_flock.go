@@ -68,10 +68,6 @@ func (l *FLockfile) Remove() {
 }
 
 func (l *FLockfile) lock(exclusive, blocking bool) error {
-	if l.lockObtained {
-		return fmt.Errorf("Already locked")
-	}
-
 	if l.file == nil {
 		f, err := os.OpenFile(l.Path, os.O_CREATE|os.O_RDWR, 0666)
 		if err != nil {
@@ -93,7 +89,7 @@ func (l *FLockfile) lock(exclusive, blocking bool) error {
 	err := syscall.Flock(int(l.file.Fd()), flags)
 	if err != nil {
 		l.file.Close()
-		return fmt.Errorf("Could not obtain file lock, owned by %d", l.Owner())
+		return ErrFailedToLock
 	}
 
 	l.lockObtained = true

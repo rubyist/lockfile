@@ -39,6 +39,10 @@
 // Both functions return a lock that conforms to the Locker interface.
 package lockfile
 
+import (
+	"errors"
+)
+
 // Locker is the interface that wraps file locking functionality.
 //
 // LockRead locks the file for reading. When a file is locked for
@@ -71,3 +75,7 @@ type Locker interface {
 	Owner() int
 	Remove()
 }
+
+var (
+	ErrFailedToLock = errors.New("failed to obtain lock")
+)
