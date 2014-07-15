@@ -21,6 +21,10 @@ func NewFLockfile(directory, name string) (*FLockfile, error) {
 	return &FLockfile{Path: filepath.Join(directory, fileName)}, nil
 }
 
+func NewFLockfileFromFile(file *os.File) (*FLockfile, error) {
+	return &FLockfile{file: file}, nil
+}
+
 func (l *FLockfile) LockRead() error {
 	return l.lock(syscall.LOCK_SH)
 }
@@ -62,21 +66,23 @@ func (l *FLockfile) lock(lockType int) error {
 		return fmt.Errorf("Already locked")
 	}
 
-	f, err := os.OpenFile(l.Path, os.O_CREATE|os.O_RDWR, 0666)
-	if err != nil {
-		return err
+	if l.file == nil {
+		f, err := os.OpenFile(l.Path, os.O_CREATE|os.O_RDWR, 0666)
+		if err != nil {
+			return err
+		}
+		l.file = f
 	}
-	l.file = f
 
-	err = syscall.Flock(int(f.Fd()), lockType|syscall.LOCK_NB)
+	err := syscall.Flock(int(l.file.Fd()), lockType|syscall.LOCK_NB)
 	if err != nil {
-		f.Close()
+		l.file.Close()
 		return fmt.Errorf("Could not obtain file lock, owned by %d", l.Owner())
 	}
 
 	l.lockObtained = true
-	f.Write([]byte(fmt.Sprintf("%d\n", os.Getpid())))
-	f.Sync()
+	l.file.Write([]byte(fmt.Sprintf("%d\n", os.Getpid())))
+	l.file.Sync()
 
 	return nil
 }
