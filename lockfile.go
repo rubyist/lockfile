@@ -61,18 +61,12 @@ import (
 // the lock it will block until it is able to.
 //
 // Unlock releases the lock on the file.
-//
-// Owner will attempt to return the PID of the process currently holding
-// a lock on the file.
-//
-// Remove will remove the underlying file
 type Locker interface {
 	LockRead() error
 	LockWrite() error
 	LockReadB() error
 	LockWriteB() error
 	Unlock()
-	Owner() int
 }
 
 var (

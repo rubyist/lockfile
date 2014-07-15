@@ -1,11 +1,7 @@
 package lockfile
 
 import (
-	"fmt"
-	"io/ioutil"
 	"os"
-	"strconv"
-	"strings"
 	"syscall"
 )
 
@@ -51,21 +47,6 @@ func (l *FLockfile) Unlock() {
 	}
 }
 
-func (l *FLockfile) Owner() int {
-	data, err := ioutil.ReadFile(l.Path)
-	if err != nil {
-		return -1
-	}
-
-	stripped := strings.Trim(string(data), "\n")
-	pid, err := strconv.ParseInt(stripped, 0, 32)
-	if err != nil {
-		return -1
-	}
-
-	return int(pid)
-}
-
 func (l *FLockfile) lock(exclusive, blocking bool) error {
 	if l.file == nil {
 		f, err := os.OpenFile(l.Path, os.O_CREATE|os.O_RDWR, 0666)
@@ -94,8 +75,6 @@ func (l *FLockfile) lock(exclusive, blocking bool) error {
 	}
 
 	l.lockObtained = true
-	l.file.Write([]byte(fmt.Sprintf("%d\n", os.Getpid())))
-	l.file.Sync()
 
 	return nil
 }
