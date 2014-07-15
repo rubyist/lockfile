@@ -99,7 +99,6 @@ func (l *FcntlLockfile) lock(exclusive, blocking bool) error {
 
 	err := syscall.FcntlFlock(l.file.Fd(), flags, l.ft)
 	if err != nil {
-		owner := l.Owner()
 		l.file.Close()
 		return ErrFailedToLock
 	}
