@@ -74,6 +74,7 @@ if err != nil {
 }
 
 lock.WriteB() // blocks until the lock can be obtained
+```
 
 ### Releasing locks
 
