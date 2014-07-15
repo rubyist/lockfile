@@ -73,7 +73,6 @@ type Locker interface {
 	LockWriteB() error
 	Unlock()
 	Owner() int
-	Remove()
 }
 
 var (

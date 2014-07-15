@@ -68,10 +68,6 @@ func (l *FcntlLockfile) Owner() int {
 	return int(ft.Pid)
 }
 
-func (l *FcntlLockfile) Remove() {
-	os.Remove(l.Path)
-}
-
 func (l *FcntlLockfile) lock(exclusive, blocking bool) error {
 	if l.file == nil {
 		f, err := os.OpenFile(l.Path, os.O_CREATE|os.O_RDWR, 0666)

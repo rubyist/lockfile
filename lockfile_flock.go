@@ -63,10 +63,6 @@ func (l *FLockfile) Owner() int {
 	return int(pid)
 }
 
-func (l *FLockfile) Remove() {
-	os.Remove(l.Path)
-}
-
 func (l *FLockfile) lock(exclusive, blocking bool) error {
 	if l.file == nil {
 		f, err := os.OpenFile(l.Path, os.O_CREATE|os.O_RDWR, 0666)
