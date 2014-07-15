@@ -23,15 +23,23 @@ func NewFcntlLockfile(directory, name string) (*FcntlLockfile, error) {
 }
 
 func NewFcntlLockfileFromFile(file *os.File) (*FcntlLockfile, error) {
-	return &FcntlLockfile{file: file}
+	return &FcntlLockfile{file: file}, nil
 }
 
 func (l *FcntlLockfile) LockRead() error {
-	return l.lock(syscall.F_RDLCK)
+	return l.lock(false, false)
 }
 
 func (l *FcntlLockfile) LockWrite() error {
-	return l.lock(syscall.F_WRLCK)
+	return l.lock(true, false)
+}
+
+func (l *FcntlLockfile) LockReadB() error {
+	return l.lock(false, true)
+}
+
+func (l *FcntlLockfile) LockWriteB() error {
+	return l.lock(true, true)
 }
 
 func (l *FcntlLockfile) Unlock() {
@@ -66,7 +74,7 @@ func (l *FcntlLockfile) Remove() {
 	os.Remove(l.Path)
 }
 
-func (l *FcntlLockfile) lock(lockType int16) error {
+func (l *FcntlLockfile) lock(exclusive, blocking bool) error {
 	if l.lockObtained {
 		return fmt.Errorf("Already locked")
 	}
@@ -80,7 +88,6 @@ func (l *FcntlLockfile) lock(lockType int16) error {
 	}
 
 	ft := &syscall.Flock_t{
-		Type:   lockType,
 		Whence: int16(os.SEEK_SET),
 		Start:  0,
 		Len:    0,
@@ -88,7 +95,19 @@ func (l *FcntlLockfile) lock(lockType int16) error {
 	}
 	l.ft = ft
 
-	err := syscall.FcntlFlock(l.file.Fd(), syscall.F_SETLK, l.ft)
+	if exclusive {
+		ft.Type = syscall.F_WRLCK
+	} else {
+		ft.Type = syscall.F_RDLCK
+	}
+	var flags int
+	if blocking {
+		flags = syscall.F_SETLKW
+	} else {
+		flags = syscall.F_SETLK
+	}
+
+	err := syscall.FcntlFlock(l.file.Fd(), flags, l.ft)
 	if err != nil {
 		owner := l.Owner()
 		l.file.Close()
