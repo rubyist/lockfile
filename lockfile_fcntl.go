@@ -12,7 +12,6 @@ import (
 type FcntlLockfile struct {
 	Path         string
 	file         *os.File
-	lockObtained bool
 	maintainFile bool
 	ft           *syscall.Flock_t
 }
@@ -26,31 +25,43 @@ func NewFcntlLockfileFromFile(file *os.File) *FcntlLockfile {
 }
 
 func (l *FcntlLockfile) LockRead() error {
-	return l.lock(false, false)
+	return l.lock(false, false, 0, os.SEEK_SET, 0)
 }
 
 func (l *FcntlLockfile) LockWrite() error {
-	return l.lock(true, false)
+	return l.lock(true, false, 0, os.SEEK_SET, 0)
 }
 
 func (l *FcntlLockfile) LockReadB() error {
-	return l.lock(false, true)
+	return l.lock(false, true, 0, os.SEEK_SET, 0)
 }
 
 func (l *FcntlLockfile) LockWriteB() error {
-	return l.lock(true, true)
+	return l.lock(true, true, 0, os.SEEK_SET, 0)
 }
 
 func (l *FcntlLockfile) Unlock() {
-	if !l.lockObtained {
-		return
-	}
+	l.unlock(0, os.SEEK_SET, 0)
+}
 
-	l.ft.Type = syscall.F_UNLCK
-	syscall.FcntlFlock(l.file.Fd(), syscall.F_SETLK, l.ft)
-	if l.maintainFile {
-		l.file.Close()
-	}
+func (l *FcntlLockfile) LockReadRange(offset int64, whence int, len int64) error {
+	return l.lock(false, false, offset, whence, len)
+}
+
+func (l *FcntlLockfile) LockWriteRange(offset int64, whence int, len int64) error {
+	return l.lock(true, false, offset, whence, len)
+}
+
+func (l *FcntlLockfile) LockReadRangeB(offset int64, whence int, len int64) error {
+	return l.lock(false, true, offset, whence, len)
+}
+
+func (l *FcntlLockfile) LockWriteRangeB(offset int64, whence int, len int64) error {
+	return l.lock(true, true, offset, whence, len)
+}
+
+func (l *FcntlLockfile) UnlockRange(offset int64, whence int, len int64) {
+	l.unlock(offset, whence, len)
 }
 
 // Owner will return the pid of the process that owns an fcntl based
@@ -74,7 +85,7 @@ func (l *FcntlLockfile) Owner() int {
 	return int(ft.Pid)
 }
 
-func (l *FcntlLockfile) lock(exclusive, blocking bool) error {
+func (l *FcntlLockfile) lock(exclusive, blocking bool, offset int64, whence int, len int64) error {
 	if l.file == nil {
 		f, err := os.OpenFile(l.Path, os.O_CREATE|os.O_RDWR, 0666)
 		if err != nil {
@@ -84,9 +95,9 @@ func (l *FcntlLockfile) lock(exclusive, blocking bool) error {
 	}
 
 	ft := &syscall.Flock_t{
-		Whence: int16(os.SEEK_SET),
-		Start:  0,
-		Len:    0,
+		Whence: int16(whence),
+		Start:  offset,
+		Len:    len,
 		Pid:    int32(os.Getpid()),
 	}
 	l.ft = ft
@@ -111,7 +122,16 @@ func (l *FcntlLockfile) lock(exclusive, blocking bool) error {
 		return ErrFailedToLock
 	}
 
-	l.lockObtained = true
-
 	return nil
+}
+
+func (l *FcntlLockfile) unlock(offset int64, whence int, len int64) {
+	l.ft.Len = len
+	l.ft.Start = offset
+	l.ft.Whence = int16(whence)
+	l.ft.Type = syscall.F_UNLCK
+	syscall.FcntlFlock(l.file.Fd(), syscall.F_SETLK, l.ft)
+	if l.maintainFile {
+		l.file.Close()
+	}
 }
