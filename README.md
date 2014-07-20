@@ -76,6 +76,11 @@ if err != nil {
 lock.WriteB() // blocks until the lock can be obtained
 ```
 
+### Releasing locks
+
+The `Unlock()` function will release a lock. Closing a file or exiting the process
+will also release any locks held on the file.
+
 ### Locking Byte Ranges
 
 When using an fcntl based lock, byte ranges within the file can be locked and unlocked.
@@ -95,11 +100,6 @@ UnlockRange(offset int64, whence int, len int64)
   - 2: relative to the end of the file
 - offset: The offset, in bytes, from whence
 - len: The number of bytes to lock
-
-### Releasing locks
-
-The `Unlock()` function will release a lock. Closing a file or exiting the process
-will also release any locks held on the file.
 
 ## Bugs and Issues
 
