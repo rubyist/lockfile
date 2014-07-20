@@ -81,6 +81,17 @@ lock.WriteB() // blocks until the lock can be obtained
 The `Unlock()` function will release a lock. Closing a file or exiting the process
 will also release any locks held on the file.
 
+*Caveat*: If the locking process opens a locked file and then closes it, all locks
+on that file will be released.
+
+```go
+lock := lockfile.NewLockfile("foobar.lock")
+lock.LockWrite() // lock obtained
+
+f, _ := os.Open("foobark.lock")
+f.Close() // lock released
+```
+
 ### Locking Byte Ranges
 
 When using an fcntl based lock, byte ranges within the file can be locked and unlocked.
