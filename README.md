@@ -88,7 +88,7 @@ on that file will be released.
 lock := lockfile.NewLockfile("foobar.lock")
 lock.LockWrite() // lock obtained
 
-f, _ := os.Open("foobark.lock")
+f, _ := os.Open("foobar.lock")
 f.Close() // lock released
 ```
 
